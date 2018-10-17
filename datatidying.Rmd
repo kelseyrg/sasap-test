@@ -36,8 +36,45 @@ catch_clean <- catch_df %>%
   tail(catch_clean)
 ```
 
+##determining why categorized as character not integer
+```{r}
+test <-as.numeric(catch_clean$catch_thousands)
+i <- which(is.na(test) == T)
+print(i)
+catch_clean[i, ]
+```
 
+fix typeo in original dataset
+`mutate` to create a new catch column
 
+```{r}
+catch_clean_mutated <- catch_clean %>% 
+  mutate(catch_thousands = ifelse(catch_thousands == "I", 1, catch_thousands))%>% 
+  mutate(catch_thousands = as.numeric(catch_thousands)) %>% 
+  mutate(catch = catch_thousands * 1000)%>% 
+  
+  select(-catch_thousands)
+  
+  tail(catch_clean_mutated)
+```
 
+split using `group_by`
 
+```{r}
+catch_summarized <- catch_clean_mutated %>% 
+  group_by(Region) %>%
+  summarize(mean_catch = mean(catch),
+            n_obs = n(),
+            max_catch = max(catch))
 
+head(catch_summarized)
+```
+
+```{r}
+catch_chinook <- catch_clean_mutated %>% 
+  filter(species == "Chinook") %>% 
+  arrange(-catch)
+
+head(catch_chinook)
+
+```
