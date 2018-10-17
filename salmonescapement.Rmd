@@ -1,0 +1,81 @@
+---
+title: "Escapement Goals Evaluation"
+author: "Kelsey Griffin"
+date: "October 17, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyr)
+library(dplyr)
+```
+
+#Prepare Daily Escapement Data
+
+Daily data sourced from [Alaska Department of Fish and Game. 2017. Daily salmon escapement counts from the OceanAK database, Alaska, 1921-2017. Knowledge Network for Biocomplexity. doi:10.5063/F1TX3CKH](http://doi:10.5063/F1TX3CKH)
+
++ filter for Bristol Bay Sockeye
++ summarize by year, calculating total count
+
+
+```{r}
+daily_escape<- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3Af119a05b-bbe7-4aea-93c6-85434dcb1c5e", method = "libcurl"),
+                    stringsAsFactors = FALSE)
+head(daily_escape)
+
+```
+```{r}
+bbcounts <- daily_escape %>%
+  filter(SASAP.Region == "Bristol Bay", Species == "Sockeye") %>% 
+  separate(sampleDate, into = c("year", "month", "day")) %>% 
+  group_by(year, Location) %>% 
+  summarise(total_escape = sum(DailyCount))
+head(bbcounts)
+```
+
+#Prepare Escapement Goals Data
+
+Source data from [Andrew Munro and Eric Volk. 2017. Summary of Pacific Salmon Escapement Goals in Alaska with a Review of Escapements from 2007 to 2015. Knowledge Network for Biocomplexity. doi:10.5063/F1TQ5ZRG](http://doi:10.5063/F1TQ5ZRG)
+
++ filter for Bristol Bay Sockeye
+
+```{r}
+escape_goals<- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/knb.92014.1", method = "libcurl"),
+                    stringsAsFactors = FALSE)
+head(escape_goals)
+```
+
+```{r}
+bb_goals <- escape_goals %>% 
+  filter(Region == "Bristol Bay", Species == "Sockeye") %>% 
+  select(Region, System, Lower, Upper) %>% 
+  mutate(Lower = ifelse(Lower == "eliminated", NA, Lower))
+head(bb_goals)
+
+
+```
+
+```{r}
+test <-as.numeric(bb_goals$Lower)
+  i <- which(is.na(test) == T)
+print(i)
+```
+#Evaluate Escapement Goals
+
++ left join escapement data and escapement goals
++ mutate for escapement goal met
+
+```{r}
+bb_joined <- left_join(bbcounts, bb_goals, by = c("Location" = "System"))
+
+head(bb_joined)
+
+```
+
+```{r}
+bb_eval <- bb_joined %>% 
+  mutate(goal_met = ifelse(total_escape >= Lower & total_escape <= Upper, TRUE, FALSE)) 
+head(bb_eval)
+  
+```
