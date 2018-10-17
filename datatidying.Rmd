@@ -78,3 +78,52 @@ catch_chinook <- catch_clean_mutated %>%
 head(catch_chinook)
 
 ```
+
+
+#joins
+
+```{r}
+region_defs <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1", method = "libcurl"),
+                        stringsAsFactors = FALSE)
+head(region_defs)
+
+
+```
+
+
+```{r}
+region_defs <- region_defs %>% 
+  select(code, mgmtArea)
+
+head(region_defs)
+
+```
+
+```{r}
+catch_joined <- left_join(catch_clean_mutated, region_defs, by = c("Region" = "code"))
+
+head(catch_joined)
+
+
+```
+
+```{r}
+dates_df <- data.frame(date = c("5/24/1930",
+                                "5/25/1930",
+                                "5/26/1930",
+                                "5/27/1930",
+                                "5/28/1930"),
+                       stringsAsFactors = FALSE)
+
+
+
+```
+
+```{r}
+dates_separate <- dates_df %>% 
+  separate(date, into = c("month", "day", "year")) %>% 
+  
+unite(col = date_iso, year, month, day, sep = "-")
+dates_separate
+
+```
